@@ -111,8 +111,9 @@ jobs:
             Interface **PySide6** — thème dark et clair commutables à la volée.
 
             ### Nouveautés ${{ github.event.inputs.tag }}
-            - 🌙 / ☀ Bascule dark / clair persistante (bouton dans le header)
-            - Couleurs du log adaptées au thème actif
+            - ⏸ Pause automatique tous les N envois (configurable : durée + fréquence)
+            - Gestion abonnement en ligne (résiliation depuis mailcentpro.web.app)
+            - Correction nom expéditeur emails de licence
 
             ### Télécharger
             | Système | Fichier |

@@ -361,7 +361,10 @@
 <!-- HEADER -->
 <header>
   <div class="logo">MailCent<span>Pro</span></div>
-  <a class="cta-small" href="#pricing">Voir les tarifs</a>
+  <nav style="display:flex;gap:12px;align-items:center;">
+    <a href="#gerer" style="color:#93c5fd;font-size:0.875rem;font-weight:600;text-decoration:none;">Mon abonnement</a>
+    <a class="cta-small" href="#pricing">Voir les tarifs</a>
+  </nav>
 </header>
 
 <!-- HERO -->
@@ -537,7 +540,7 @@
     </div>
     <div class="faq-item">
       <h4>Puis-je annuler mon abonnement ?</h4>
-      <p>Oui, à tout moment depuis votre espace Stripe. Votre accès reste actif jusqu'à la fin de la période payée.</p>
+      <p>Oui, à tout moment. Utilisez la section <a href="#gerer" style="color:var(--blue)">Mon abonnement</a> en bas de page pour accéder à votre espace Stripe et résilier en un clic. Votre accès reste actif jusqu'à la fin de la période payée.</p>
     </div>
     <div class="faq-item">
       <h4>L'application fonctionne-t-elle sur Mac ou Linux ?</h4>
@@ -547,6 +550,28 @@
       <h4>Comment obtenir ma clé de licence après le paiement ?</h4>
       <p>Elle vous est envoyée automatiquement par email dès confirmation du paiement. Vérifiez vos spams si vous ne la recevez pas dans les 5 minutes.</p>
     </div>
+  </div>
+</section>
+
+<!-- GÉRER ABONNEMENT -->
+<section id="gerer" style="padding:60px 24px;background:#f8fafc;text-align:center;">
+  <div style="max-width:480px;margin:0 auto;">
+    <h2 style="font-size:1.4rem;font-weight:700;color:var(--navy);margin-bottom:8px;">Gérer mon abonnement</h2>
+    <p style="color:var(--gray);font-size:0.9rem;margin-bottom:24px;">
+      Annulez, mettez à jour votre moyen de paiement ou consultez vos factures depuis votre espace Stripe.
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+      <input type="email" id="manage-email" placeholder="votre@email.fr" autocomplete="email"
+             style="flex:1;min-width:220px;padding:12px 16px;border:2px solid #e2e8f0;border-radius:8px;
+                    font-size:0.95rem;outline:none;color:#1e293b;background:#fff;transition:border-color .2s;">
+      <button onclick="gererAbonnement()" id="manage-btn"
+              style="background:var(--navy);color:#fff;padding:13px 24px;border-radius:8px;
+                     font-size:0.95rem;font-weight:700;border:none;cursor:pointer;white-space:nowrap;
+                     transition:opacity .2s;">
+        Accéder à mon espace →
+      </button>
+    </div>
+    <p id="manage-msg" style="margin-top:12px;font-size:0.9rem;font-weight:600;display:none;"></p>
   </div>
 </section>
 
@@ -593,7 +618,50 @@
 </footer>
 
 <script>
-  const ESSAI_URL = "https://tcexvmzfesnbhfjcgrnz.supabase.co/functions/v1/essai-gratuit";
+  const ESSAI_URL  = "https://tcexvmzfesnbhfjcgrnz.supabase.co/functions/v1/essai-gratuit";
+  const GERER_URL  = "https://tcexvmzfesnbhfjcgrnz.supabase.co/functions/v1/gerer-abonnement";
+
+  async function gererAbonnement() {
+    const input = document.getElementById("manage-email");
+    const btn   = document.getElementById("manage-btn");
+    const msg   = document.getElementById("manage-msg");
+    const email = input.value.trim();
+
+    msg.style.display = "none";
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      msg.style.cssText = "display:block;color:#991b1b;font-weight:600;margin-top:12px;font-size:.9rem;";
+      msg.textContent = "⚠ Veuillez saisir une adresse email valide.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Chargement…";
+
+    try {
+      const resp = await fetch(GERER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await resp.json();
+
+      if (data.succes && data.url) {
+        window.location.href = data.url;
+      } else {
+        msg.style.cssText = "display:block;color:#991b1b;font-weight:600;margin-top:12px;font-size:.9rem;";
+        msg.textContent = "❌ " + (data.message || "Aucun abonnement trouvé pour cet email.");
+        btn.disabled = false;
+        btn.textContent = "Accéder à mon espace →";
+      }
+    } catch (_) {
+      msg.style.cssText = "display:block;color:#991b1b;font-weight:600;margin-top:12px;font-size:.9rem;";
+      msg.textContent = "❌ Erreur réseau — réessayez dans quelques instants.";
+      btn.disabled = false;
+      btn.textContent = "Accéder à mon espace →";
+    }
+  }
+
 
   async function demanderEssai() {
     const input = document.getElementById("trial-email");
@@ -644,6 +712,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("trial-email")
       .addEventListener("keydown", e => { if (e.key === "Enter") demanderEssai(); });
+    const me = document.getElementById("manage-email");
+    if (me) me.addEventListener("keydown", e => { if (e.key === "Enter") gererAbonnement(); });
   });
 
   const DL_BASE = "https://github.com/zbenkhelifa/mailcentpro/releases/latest/download/";

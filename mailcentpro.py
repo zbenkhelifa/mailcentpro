@@ -141,8 +141,8 @@ def load_config():
             return json.load(f)
     return {
         "smtp_host": "", "smtp_port": "587", "smtp_user": "", "smtp_password": "",
-        "smtp_tls": True, "delai": "3", "objet": "Message",
-        "csv_path": "", "email_col": "", "pdf_dir": "", "design": DEFAULT_DESIGN,
+        "smtp_tls": True, "delai": "3", "pause_tous_les": "0", "pause_duree": "30",
+        "objet": "Message", "csv_path": "", "email_col": "", "pdf_dir": "", "design": DEFAULT_DESIGN,
         "dark_mode": True,
     }
 
@@ -813,9 +813,30 @@ class App(QMainWindow):
         self._delai_spin.setValue(3)
         self._delai_spin.setFixedWidth(72)
         ol.addWidget(self._delai_spin)
-        hint_d = QLabel("secondes  (recommandé : 3–5 s pour éviter le spam)")
+        hint_d = QLabel("s  ·")
         self._themed_widgets.append((hint_d, lambda c: f"color: {c['dim']}; font-size: 12px;"))
         ol.addWidget(hint_d)
+
+        lbl_p = QLabel("Pause de")
+        self._themed_widgets.append((lbl_p, lambda c: f"color: {c['muted']};"))
+        ol.addWidget(lbl_p)
+        self._pause_duree_spin = QSpinBox()
+        self._pause_duree_spin.setRange(1, 300)
+        self._pause_duree_spin.setValue(30)
+        self._pause_duree_spin.setFixedWidth(72)
+        ol.addWidget(self._pause_duree_spin)
+        lbl_p2 = QLabel("s  tous les")
+        self._themed_widgets.append((lbl_p2, lambda c: f"color: {c['muted']};"))
+        ol.addWidget(lbl_p2)
+        self._pause_tous_les_spin = QSpinBox()
+        self._pause_tous_les_spin.setRange(0, 500)
+        self._pause_tous_les_spin.setValue(0)
+        self._pause_tous_les_spin.setFixedWidth(72)
+        self._pause_tous_les_spin.setSpecialValueText("désactivé")
+        ol.addWidget(self._pause_tous_les_spin)
+        hint_p = QLabel("envois  (0 = désactivé)")
+        self._themed_widgets.append((hint_p, lambda c: f"color: {c['dim']}; font-size: 12px;"))
+        ol.addWidget(hint_p)
         ol.addStretch()
         layout.addWidget(opt_grp)
         layout.addStretch()
@@ -1136,6 +1157,8 @@ class App(QMainWindow):
             inp.setText(str(self.cfg.get(key, "")))
         self._tls_check.setChecked(self.cfg.get("smtp_tls", True))
         self._delai_spin.setValue(int(self.cfg.get("delai", 3)))
+        self._pause_tous_les_spin.setValue(int(self.cfg.get("pause_tous_les", 0)))
+        self._pause_duree_spin.setValue(int(self.cfg.get("pause_duree", 30)))
         self._csv_input.setText(self.cfg.get("csv_path", ""))
         self._objet_input.setText(self.cfg.get("objet", "Message"))
 
@@ -1165,7 +1188,9 @@ class App(QMainWindow):
         for key, inp in self._smtp_inputs.items():
             self.cfg[key] = inp.text().strip()
         self.cfg["smtp_tls"]  = self._tls_check.isChecked()
-        self.cfg["delai"]     = str(self._delai_spin.value())
+        self.cfg["delai"]          = str(self._delai_spin.value())
+        self.cfg["pause_tous_les"] = str(self._pause_tous_les_spin.value())
+        self.cfg["pause_duree"]    = str(self._pause_duree_spin.value())
         self.cfg["csv_path"]  = self._csv_input.text()
         self.cfg["objet"]     = self._objet_input.text().strip()
         self.cfg["email_col"] = self._email_col_combo.currentText()
@@ -1459,12 +1484,18 @@ class App(QMainWindow):
             QMessageBox.warning(self, "Fichier vide", "Aucun destinataire trouvé dans le CSV.")
             return
 
-        delai = self._delai_spin.value()
-        total = len(destinataires)
+        delai          = self._delai_spin.value()
+        pause_tous_les = self._pause_tous_les_spin.value()
+        pause_duree    = self._pause_duree_spin.value()
+        total          = len(destinataires)
+        nb_pauses      = (total // pause_tous_les) if pause_tous_les > 0 else 0
+        duree_estimee  = total * delai + nb_pauses * pause_duree
+        detail_pause   = (f"\nPause de {pause_duree} s tous les {pause_tous_les} envois "
+                          f"({nb_pauses} pause(s) prévue(s))") if pause_tous_les > 0 else ""
         ret = QMessageBox.question(
             self, "Confirmer",
-            f"Envoyer à {total} destinataire(s) avec un délai de {delai} s ?\n\n"
-            f"Durée estimée : ~{total * delai} secondes",
+            f"Envoyer à {total} destinataire(s) avec un délai de {delai} s ?{detail_pause}\n\n"
+            f"Durée estimée : ~{duree_estimee} secondes",
         )
         if ret != QMessageBox.Yes:
             return
@@ -1499,7 +1530,9 @@ class App(QMainWindow):
         user      = self.cfg["smtp_user"]
         password  = self.cfg["smtp_password"]
         use_tls   = self.cfg["smtp_tls"]
-        delai     = int(self.cfg["delai"])
+        delai          = int(self.cfg["delai"])
+        pause_tous_les = int(self.cfg.get("pause_tous_les", 0))
+        pause_duree    = int(self.cfg.get("pause_duree", 30))
         objet     = self.cfg["objet"]
         design    = self.cfg["design"]
         pdf_dir   = self.cfg.get("pdf_dir", "")
@@ -1599,7 +1632,13 @@ class App(QMainWindow):
 
                     sig.progress_update.emit(i + 1, total)
                     if i < total - 1 and not self._stop_flag:
-                        time.sleep(delai)
+                        envois_faits = i + 1
+                        if pause_tous_les > 0 and envois_faits % pause_tous_les == 0:
+                            sig.log_append.emit(
+                                f"⏸ Pause de {pause_duree} s après {envois_faits} envois...", "WARN")
+                            time.sleep(pause_duree)
+                        else:
+                            time.sleep(delai)
             finally:
                 try:
                     server.quit()
