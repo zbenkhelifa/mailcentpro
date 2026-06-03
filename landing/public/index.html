@@ -264,15 +264,9 @@
       border-radius: 16px;
       padding: 32px 28px;
       margin-bottom: 40px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
       text-align: left;
     }
-    .trial-card-text { flex: 1; min-width: 200px; }
-    .trial-card-text .trial-badge {
+    .trial-badge {
       display: inline-block;
       background: var(--green);
       color: #fff;
@@ -284,20 +278,54 @@
       letter-spacing: .5px;
       text-transform: uppercase;
     }
-    .trial-card-text h3 { font-size: 1.2rem; font-weight: 700; color: #14532d; margin-bottom: 6px; }
-    .trial-card-text p  { font-size: 0.9rem; color: #166534; }
+    .trial-card h3 { font-size: 1.2rem; font-weight: 700; color: #14532d; margin-bottom: 6px; }
+    .trial-card > p { font-size: 0.9rem; color: #166534; margin-bottom: 18px; }
+
+    /* Formulaire essai */
+    .trial-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .trial-form input[type="email"] {
+      flex: 1;
+      min-width: 220px;
+      padding: 12px 16px;
+      border: 2px solid #86efac;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      background: #fff;
+      color: #1e293b;
+      transition: border-color .2s;
+    }
+    .trial-form input[type="email"]:focus { border-color: var(--green); }
+    .trial-form input[type="email"]::placeholder { color: #94a3b8; }
     .btn-trial {
       background: var(--green);
       color: #fff;
-      padding: 13px 26px;
+      padding: 13px 24px;
       border-radius: 8px;
       font-size: 0.95rem;
       font-weight: 700;
-      text-decoration: none;
+      border: none;
+      cursor: pointer;
       white-space: nowrap;
       transition: opacity .2s, transform .2s;
     }
-    .btn-trial:hover { opacity: .88; transform: translateY(-1px); }
+    .btn-trial:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+    .btn-trial:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    /* Messages état */
+    .trial-msg {
+      margin-top: 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: none;
+    }
+    .trial-msg.ok  { color: #14532d; display: block; }
+    .trial-msg.err { color: #991b1b; display: block; }
 
     /* ── FAQ ── */
     .faq {
@@ -420,13 +448,15 @@
   <p style="color:var(--gray);max-width:500px;margin:0 auto;">Un abonnement, jusqu'à 3 postes activés simultanément. Résiliable à tout moment.</p>
 
   <!-- Essai gratuit 1 mois -->
-  <div class="trial-card">
-    <div class="trial-card-text">
-      <div class="trial-badge">Offre limitée</div>
-      <h3>1 mois d'essai gratuit</h3>
-      <p>Testez toutes les fonctionnalités sans engagement. Aucune carte bancaire requise pour démarrer.</p>
+  <div class="trial-card" id="trial-card">
+    <div class="trial-badge">Offre limitée</div>
+    <h3>1 mois d'essai gratuit</h3>
+    <p>Entrez votre email — vous recevez instantanément une clé valable 1 mois. Aucune carte bancaire requise.</p>
+    <div class="trial-form">
+      <input type="email" id="trial-email" placeholder="votre@email.fr" autocomplete="email" required>
+      <button class="btn-trial" id="trial-btn" onclick="demanderEssai()">Recevoir ma clé →</button>
     </div>
-    <a class="btn-trial" href="mailto:codeappli09@gmail.com?subject=Essai%20gratuit%20MailCent%20Pro&body=Bonjour%2C%0A%0AJe%20souhaite%20b%C3%A9n%C3%A9ficier%20de%20l%27essai%20gratuit%20d%271%20mois%20de%20MailCent%20Pro.%0A%0AMerci%20!">Démarrer l'essai gratuit →</a>
+    <p class="trial-msg" id="trial-msg"></p>
   </div>
 
   <!-- Toggle mensuel / annuel -->
@@ -483,7 +513,7 @@
     <h2 class="section-title">Questions fréquentes</h2>
     <div class="faq-item">
       <h4>Comment fonctionne l'essai gratuit d'un mois ?</h4>
-      <p>Envoyez un email à <a href="mailto:codeappli09@gmail.com?subject=Essai%20gratuit%20MailCent%20Pro" style="color:var(--blue)">codeappli09@gmail.com</a> avec pour sujet "Essai gratuit MailCent Pro". Vous recevrez une licence d'essai valable 1 mois, sans carte bancaire et sans engagement.</p>
+      <p>Entrez votre email dans la section <a href="#pricing" style="color:var(--blue)">Tarifs</a>. Vous recevez immédiatement une clé de licence valable 31 jours, sans carte bancaire et sans engagement. Un seul essai par adresse email.</p>
     </div>
     <div class="faq-item">
       <h4>Sur combien d'ordinateurs puis-je installer l'application ?</h4>
@@ -563,6 +593,59 @@
 </footer>
 
 <script>
+  const ESSAI_URL = "https://tcexvmzfesnbhfjcgrnz.supabase.co/functions/v1/essai-gratuit";
+
+  async function demanderEssai() {
+    const input = document.getElementById("trial-email");
+    const btn   = document.getElementById("trial-btn");
+    const msg   = document.getElementById("trial-msg");
+    const email = input.value.trim();
+
+    msg.className = "trial-msg";
+    msg.textContent = "";
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      msg.className = "trial-msg err";
+      msg.textContent = "⚠ Veuillez saisir une adresse email valide.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Envoi en cours…";
+
+    try {
+      const resp = await fetch(ESSAI_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await resp.json();
+
+      if (data.succes) {
+        msg.className = "trial-msg ok";
+        msg.textContent = "✅ Clé envoyée ! Vérifiez votre boîte mail (et les spams).";
+        input.value = "";
+        btn.textContent = "Envoyé ✓";
+      } else {
+        msg.className = "trial-msg err";
+        msg.textContent = "❌ " + (data.message || "Erreur — réessayez.");
+        btn.disabled = false;
+        btn.textContent = "Recevoir ma clé →";
+      }
+    } catch (_) {
+      msg.className = "trial-msg err";
+      msg.textContent = "❌ Erreur réseau — réessayez dans quelques instants.";
+      btn.disabled = false;
+      btn.textContent = "Recevoir ma clé →";
+    }
+  }
+
+  // Soumettre avec la touche Entrée
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("trial-email")
+      .addEventListener("keydown", e => { if (e.key === "Enter") demanderEssai(); });
+  });
+
   const DL_BASE = "https://github.com/zbenkhelifa/mailcentpro/releases/latest/download/";
   const DL_CFG = {
     windows: { file: "MailCentPro-Windows.zip", label: "Télécharger pour Windows (.zip)", note: "Windows 10 ou supérieur · Extraire et lancer MailCentPro.exe" },
