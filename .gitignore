@@ -1,3 +1,6 @@
+# Logs d'erreurs d'envoi (générés automatiquement)
+data/erreurs_*.csv
+
 # Licences et config sensibles
 *.licence
 config.json

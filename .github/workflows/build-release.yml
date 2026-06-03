@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag de release (ex: v1.0)"
+        description: "Tag de release (ex: v2.0)"
         required: true
-        default: "v1.0"
+        default: "v2.0"
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -31,53 +32,93 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python (Windows / Mac)
-        if: matrix.platform != 'Linux'
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      # ── Dépendances système Linux ──────────────────────────────────────────
       - name: Dépendances système (Linux)
         if: matrix.platform == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 python3-pip python3-tk
+          sudo apt-get update -q
+          sudo apt-get install -y -q \
+            libxcb-cursor0 libxcb-xkb1 libxkbcommon-x11-0 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
+            libxcb-xinerama0 zip
 
-      - name: Installer PyInstaller
-        run: pip install pyinstaller
+      # ── PySide6 + PyInstaller ──────────────────────────────────────────────
+      - name: Installer PySide6 + PyInstaller
+        run: pip install PySide6 pyinstaller
+
+      # ── Build via spec commun ──────────────────────────────────────────────
+      - name: Compiler avec mailcentpro.spec
         shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m PyInstaller mailcentpro.spec --clean --noconfirm
 
-      - name: Compiler (Windows)
-        if: matrix.platform == 'Windows'
-        run: pyinstaller --onefile --windowed --name "MailCentPro" --hidden-import tkinter --clean mailcentpro.py
+      # ── Dossier data ───────────────────────────────────────────────────────
+      - name: Copier data (Windows / Linux)
+        if: matrix.platform != 'Mac'
+        shell: bash
+        run: |
+          mkdir -p dist/MailCentPro/data
+          cp data/eleves_exemple.csv dist/MailCentPro/data/ 2>/dev/null || true
 
-      - name: Compiler (Mac)
+      - name: Copier data (Mac)
         if: matrix.platform == 'Mac'
-        run: pyinstaller --onefile --windowed --name "MailCentPro" --hidden-import tkinter --clean mailcentpro.py
+        run: |
+          mkdir -p "dist/MailCentPro.app/Contents/Resources/data"
+          cp data/eleves_exemple.csv \
+            "dist/MailCentPro.app/Contents/Resources/data/" 2>/dev/null || true
 
-      - name: Compiler (Linux)
-        if: matrix.platform == 'Linux'
-        run: python3 -m PyInstaller --onefile --name "MailCentPro" --hidden-import tkinter --clean mailcentpro.py
-
+      # ── Créer les zips ─────────────────────────────────────────────────────
       - name: Créer le zip (Windows)
         if: matrix.platform == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path release_tmp
-          Copy-Item dist\MailCentPro.exe release_tmp\
-          Copy-Item -Recurse data release_tmp\data
-          Compress-Archive -Path release_tmp\* -DestinationPath ${{ matrix.zip_name }}
+          Compress-Archive -Path dist\MailCentPro `
+            -DestinationPath MailCentPro-Windows.zip -Force
 
-      - name: Créer le zip (Mac / Linux)
-        if: matrix.platform != 'Windows'
+      - name: Créer le zip (Mac)
+        if: matrix.platform == 'Mac'
         run: |
-          mkdir -p release_tmp
-          cp dist/MailCentPro release_tmp/
-          cp -r data release_tmp/data
-          cd release_tmp && zip -r ../${{ matrix.zip_name }} .
+          cd dist
+          zip -r ../MailCentPro-Mac.zip MailCentPro.app/
 
+      - name: Créer le zip (Linux)
+        if: matrix.platform == 'Linux'
+        run: |
+          cd dist
+          zip -r ../MailCentPro-Linux.zip MailCentPro/
+
+      # ── Upload dans la Release ─────────────────────────────────────────────
       - name: Upload dans la Release GitHub
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag }}
+          name: "MailCentPro ${{ github.event.inputs.tag }}"
+          draft: false
+          prerelease: false
+          make_latest: true
+          body: |
+            ## MailCent Pro ${{ github.event.inputs.tag }}
+
+            Interface redessinée avec **PySide6** — thème dark professionnel.
+
+            ### Télécharger
+            | Système | Fichier |
+            |---|---|
+            | 🪟 Windows 10+ | `MailCentPro-Windows.zip` |
+            | 🍎 macOS 12+ | `MailCentPro-Mac.zip` |
+            | 🐧 Ubuntu / Debian | `MailCentPro-Linux.zip` |
+
+            ### Lancer (aucune installation requise)
+            1. Télécharger le zip correspondant à votre système
+            2. Extraire l'archive
+            3. **Windows** : double-cliquer `MailCentPro\MailCentPro.exe`
+            4. **Mac** : double-cliquer `MailCentPro.app`
+            5. **Linux** : lancer `./MailCentPro/MailCentPro` depuis un terminal
           files: ${{ matrix.zip_name }}
