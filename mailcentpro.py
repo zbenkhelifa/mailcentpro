@@ -1483,6 +1483,16 @@ class App(QMainWindow):
         self._stop_flag = True
         self._do_log("Arrêt demandé — en attente de fin d'envoi en cours...", "WARN")
 
+    @staticmethod
+    def _build_from_addr(user: str, host: str) -> str:
+        """Construit une adresse From complète si smtp_user n'a pas de domaine.
+        Ex : 'zahire.benkhelifa' + 'smtp.monlycee.net' → 'zahire.benkhelifa@monlycee.net'"""
+        if "@" in user:
+            return user
+        parts = host.split(".")
+        domain = ".".join(parts[1:]) if parts[0].lower() in ("smtp", "mail", "mx", "imap") else host
+        return f"{user}@{domain}" if domain else user
+
     def _send_all(self, destinataires):
         host      = self.cfg["smtp_host"]
         port      = int(self.cfg["smtp_port"] or 587)
@@ -1494,6 +1504,7 @@ class App(QMainWindow):
         design    = self.cfg["design"]
         pdf_dir   = self.cfg.get("pdf_dir", "")
         email_col = self.cfg.get("email_col", "email")
+        from_addr = self._build_from_addr(user, host)
         template  = build_html(design)
         total     = len(destinataires)
         ok_count  = 0
@@ -1503,14 +1514,19 @@ class App(QMainWindow):
 
         sig.log_append.emit(f"Début de l'envoi — {total} destinataires", "START")
 
-        try:
+        def _connect():
             ctx = ssl.create_default_context()
-            with smtplib.SMTP(host, port, timeout=15) as server:
-                if use_tls:
-                    server.starttls(context=ctx)
-                server.login(user, password)
-                sig.log_append.emit("Connecté au serveur SMTP.", "OK")
+            s = smtplib.SMTP(host, port, timeout=15)
+            if use_tls:
+                s.starttls(context=ctx)
+            s.login(user, password)
+            return s
 
+        try:
+            server = _connect()
+            sig.log_append.emit(f"Connecté au serveur SMTP ({from_addr}).", "OK")
+
+            try:
                 for i, dest in enumerate(destinataires):
                     if self._stop_flag:
                         sig.log_append.emit("Envoi interrompu par l'utilisateur.", "WARN")
@@ -1524,6 +1540,7 @@ class App(QMainWindow):
                     if not email:
                         sig.log_append.emit(
                             f"Ligne {i+1} : colonne '{email_col}' vide — ignorée", "WARN")
+                        sig.progress_update.emit(i + 1, total)
                         continue
 
                     corps_html  = template
@@ -1550,14 +1567,27 @@ class App(QMainWindow):
                         msg.attach(MIMEText(corps_html,  "html",  "utf-8"))
 
                     msg["Subject"] = objet
-                    msg["From"]    = user
+                    msg["From"]    = from_addr
                     msg["To"]      = email
 
                     try:
-                        server.sendmail(user, email, msg.as_string())
+                        server.sendmail(from_addr, email, msg.as_string())
                         ok_count += 1
                         pj = f" 📎 {os.path.basename(pdf_path)}" if pdf_path else ""
                         sig.log_append.emit(f"[{i+1}/{total}] ✔ Envoyé à {email}{pj}", "OK")
+                    except smtplib.SMTPServerDisconnected:
+                        # Reconnexion automatique après coupure serveur
+                        sig.log_append.emit("Connexion perdue — reconnexion...", "WARN")
+                        try:
+                            server = _connect()
+                            server.sendmail(from_addr, email, msg.as_string())
+                            ok_count += 1
+                            pj = f" 📎 {os.path.basename(pdf_path)}" if pdf_path else ""
+                            sig.log_append.emit(f"[{i+1}/{total}] ✔ Envoyé à {email}{pj} (après reconnexion)", "OK")
+                        except Exception as e2:
+                            err_list.append(email)
+                            err_rows.append(dest)
+                            sig.log_append.emit(f"[{i+1}/{total}] ❌ Échec après reconnexion <{email}> : {e2}", "ERR")
                     except Exception as e:
                         err_list.append(email)
                         err_rows.append(dest)
@@ -1570,6 +1600,11 @@ class App(QMainWindow):
                     sig.progress_update.emit(i + 1, total)
                     if i < total - 1 and not self._stop_flag:
                         time.sleep(delai)
+            finally:
+                try:
+                    server.quit()
+                except Exception:
+                    pass
 
         except Exception as e:
             sig.log_append.emit(f"Erreur SMTP : {e}", "ERR")
@@ -1584,15 +1619,17 @@ class App(QMainWindow):
         self._do_log(f"Envoi terminé : {ok_count} succès, {len(err_list)} erreur(s)", "OK")
         if err_rows:
             self._do_log(f"Emails en erreur : {', '.join(err_list)}", "WARN")
-            data_dir = os.path.join(os.path.dirname(__file__), "data")
+            # Écrire à côté du CSV source (chemin toujours accessible, même en app compilée)
+            csv_source = self.cfg.get("csv_path", "")
+            err_dir = os.path.dirname(csv_source) if csv_source else str(Path.home())
             ts       = datetime.now().strftime("%Y%m%d_%H%M%S")
-            err_path = os.path.join(data_dir, f"erreurs_{ts}.csv")
+            err_path = os.path.join(err_dir, f"erreurs_{ts}.csv")
             try:
                 with open(err_path, "w", newline="", encoding="utf-8-sig") as fe:
                     writer = csv.DictWriter(fe, fieldnames=list(err_rows[0].keys()))
                     writer.writeheader()
                     writer.writerows(err_rows)
-                self._do_log(f"CSV erreurs exporté → data/erreurs_{ts}.csv", "WARN")
+                self._do_log(f"CSV erreurs exporté → {err_path}", "WARN")
             except Exception as ex:
                 self._do_log(f"Impossible d'écrire le CSV erreurs : {ex}", "ERR")
         self._lbl_progress.setText(f"Terminé — {ok_count}/{total} envoyés")
