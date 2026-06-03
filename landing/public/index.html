@@ -257,6 +257,48 @@
     .plan[data-period] { display: none; }
     .plan[data-period].visible { display: block; }
 
+    /* ── TRIAL CARD ── */
+    .trial-card {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border: 2px solid var(--green);
+      border-radius: 16px;
+      padding: 32px 28px;
+      margin-bottom: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      text-align: left;
+    }
+    .trial-card-text { flex: 1; min-width: 200px; }
+    .trial-card-text .trial-badge {
+      display: inline-block;
+      background: var(--green);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .trial-card-text h3 { font-size: 1.2rem; font-weight: 700; color: #14532d; margin-bottom: 6px; }
+    .trial-card-text p  { font-size: 0.9rem; color: #166534; }
+    .btn-trial {
+      background: var(--green);
+      color: #fff;
+      padding: 13px 26px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: opacity .2s, transform .2s;
+    }
+    .btn-trial:hover { opacity: .88; transform: translateY(-1px); }
+
     /* ── FAQ ── */
     .faq {
       background: #f8fafc;
@@ -300,7 +342,7 @@
   <h1>Des mails personnalisés pour chaque destinataire, <em>en un clic</em></h1>
   <p>Importez votre CSV, rédigez votre message avec <strong style="color:#93c5fd">{variables}</strong>, joignez un PDF par destinataire — MailCent Pro envoie un mail unique à chacun.</p>
   <a class="hero-cta" href="#pricing">Commencer dès maintenant</a>
-  <p class="hero-note">Dès 2,99 € / mois · Sans engagement · Annulez à tout moment</p>
+  <p class="hero-note">🎁 1 mois gratuit · Puis dès 2,99 € / mois · Sans engagement · Annulez à tout moment</p>
 </section>
 
 <!-- FEATURES -->
@@ -377,6 +419,16 @@
   <h2 class="section-title">Tarifs simples et transparents</h2>
   <p style="color:var(--gray);max-width:500px;margin:0 auto;">Un abonnement, jusqu'à 3 postes activés simultanément. Résiliable à tout moment.</p>
 
+  <!-- Essai gratuit 1 mois -->
+  <div class="trial-card">
+    <div class="trial-card-text">
+      <div class="trial-badge">Offre limitée</div>
+      <h3>1 mois d'essai gratuit</h3>
+      <p>Testez toutes les fonctionnalités sans engagement. Aucune carte bancaire requise pour démarrer.</p>
+    </div>
+    <a class="btn-trial" href="mailto:codeappli09@gmail.com?subject=Essai%20gratuit%20MailCent%20Pro&body=Bonjour%2C%0A%0AJe%20souhaite%20b%C3%A9n%C3%A9ficier%20de%20l%27essai%20gratuit%20d%271%20mois%20de%20MailCent%20Pro.%0A%0AMerci%20!">Démarrer l'essai gratuit →</a>
+  </div>
+
   <!-- Toggle mensuel / annuel -->
   <div class="billing-toggle">
     <span class="toggle-label active" id="btn-monthly" onclick="setBilling('monthly')">Mensuel</span>
@@ -430,6 +482,10 @@
   <div class="faq-inner">
     <h2 class="section-title">Questions fréquentes</h2>
     <div class="faq-item">
+      <h4>Comment fonctionne l'essai gratuit d'un mois ?</h4>
+      <p>Envoyez un email à <a href="mailto:codeappli09@gmail.com?subject=Essai%20gratuit%20MailCent%20Pro" style="color:var(--blue)">codeappli09@gmail.com</a> avec pour sujet "Essai gratuit MailCent Pro". Vous recevrez une licence d'essai valable 1 mois, sans carte bancaire et sans engagement.</p>
+    </div>
+    <div class="faq-item">
       <h4>Sur combien d'ordinateurs puis-je installer l'application ?</h4>
       <p>Votre licence autorise jusqu'à 3 activations simultanées. Vous pouvez désactiver un poste pour en activer un autre.</p>
     </div>
@@ -474,15 +530,15 @@
     <div style="display:flex;gap:10px;margin-bottom:16px;">
       <div class="dl-tab active" id="dl-windows" onclick="selectDL('windows')"
            style="flex:1;padding:12px 6px;border:2px solid #2563eb;border-radius:8px;background:#eff6ff;cursor:pointer;text-align:center;font-size:.85rem;font-weight:600;color:#1e40af;transition:all .2s;">
-        <div style="font-size:1.4rem;">🪟</div>Windows
+        <img src="windows.png" alt="Windows" style="width:32px;height:28px;object-fit:contain;display:block;margin:0 auto 4px;">Windows
       </div>
       <div class="dl-tab" id="dl-mac" onclick="selectDL('mac')"
            style="flex:1;padding:12px 6px;border:2px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;text-align:center;font-size:.85rem;font-weight:600;color:#64748b;transition:all .2s;">
-        <div style="font-size:1.4rem;">🍎</div>Mac
+        <img src="apple.png" alt="Mac" style="width:32px;height:28px;object-fit:contain;display:block;margin:0 auto 4px;">Mac
       </div>
       <div class="dl-tab" id="dl-linux" onclick="selectDL('linux')"
            style="flex:1;padding:12px 6px;border:2px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;text-align:center;font-size:.85rem;font-weight:600;color:#64748b;transition:all .2s;">
-        <div style="font-size:1.4rem;">🐧</div>Linux
+        <img src="linux.png" alt="Linux" style="width:32px;height:28px;object-fit:contain;display:block;margin:0 auto 4px;">Linux
       </div>
     </div>
 
