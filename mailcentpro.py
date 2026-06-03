@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MailCent Pro — PySide6 dark edition"""
+"""MailCent Pro — PySide6 dark/light edition"""
 
 import csv, hashlib, json, os, smtplib, socket, ssl, sys, threading, time
 import urllib.error, urllib.request
@@ -143,6 +143,7 @@ def load_config():
         "smtp_host": "", "smtp_port": "587", "smtp_user": "", "smtp_password": "",
         "smtp_tls": True, "delai": "3", "objet": "Message",
         "csv_path": "", "email_col": "", "pdf_dir": "", "design": DEFAULT_DESIGN,
+        "dark_mode": True,
     }
 
 def save_config(cfg):
@@ -157,7 +158,7 @@ def load_csv(path):
             rows.append(row)
     return rows
 
-# ── Dark stylesheet ───────────────────────────────────────────────────────────
+# ── Stylesheets ───────────────────────────────────────────────────────────────
 DARK_STYLE = """
 QWidget {
     background-color: #1e1e2e;
@@ -275,6 +276,176 @@ QMessageBox QLabel { color: #cdd6f4; }
 QPushButton { min-height: 32px; border-radius: 6px; border: none; font-weight: 600; }
 """
 
+LIGHT_STYLE = """
+QWidget {
+    background-color: #f5f5f5;
+    color: #1f2937;
+    font-family: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+}
+QTabWidget::pane {
+    border: 1px solid #d1d5db;
+    background: #f5f5f5;
+    border-radius: 0 8px 8px 8px;
+    top: -1px;
+}
+QTabBar::tab {
+    background: #e5e7eb;
+    color: #6b7280;
+    padding: 10px 22px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    margin-right: 2px;
+    font-weight: 600;
+}
+QTabBar::tab:selected {
+    background: #f5f5f5;
+    color: #1f2937;
+    border-color: #d1d5db;
+    border-bottom: 1px solid #f5f5f5;
+}
+QTabBar::tab:hover:!selected { background: #dde1e7; color: #1f2937; }
+QLineEdit, QSpinBox {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 7px 11px;
+    color: #1f2937;
+    selection-background-color: #2563eb;
+}
+QLineEdit:focus, QSpinBox:focus { border-color: #2563eb; }
+QLineEdit:read-only { background: #f0f2f5; color: #9ca3af; }
+QComboBox {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 7px 11px;
+    color: #1f2937;
+}
+QComboBox:focus { border-color: #2563eb; }
+QComboBox::drop-down { border: none; width: 20px; }
+QComboBox QAbstractItemView {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #1f2937;
+    selection-background-color: #2563eb;
+    padding: 4px;
+}
+QTextEdit {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px;
+    color: #1f2937;
+    selection-background-color: #2563eb;
+}
+QTextEdit:focus { border-color: #2563eb; }
+QGroupBox {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    margin-top: 16px;
+    padding: 16px 12px 12px 12px;
+    font-weight: 700;
+    color: #2563eb;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 12px;
+    padding: 0 6px;
+    color: #2563eb;
+    background: #f5f5f5;
+}
+QCheckBox { color: #1f2937; spacing: 8px; }
+QCheckBox::indicator {
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    border: 2px solid #d1d5db;
+    background: #ffffff;
+}
+QCheckBox::indicator:checked { background: #2563eb; border-color: #2563eb; }
+QCheckBox::indicator:hover { border-color: #2563eb; }
+QProgressBar {
+    background: #e5e7eb;
+    border-radius: 5px;
+    border: none;
+    height: 10px;
+    text-align: center;
+    color: transparent;
+}
+QProgressBar::chunk {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #2563eb,stop:1 #7c3aed);
+    border-radius: 5px;
+}
+QScrollBar:vertical {
+    background: #f5f5f5; width: 8px; border-radius: 4px;
+}
+QScrollBar::handle:vertical { background: #d1d5db; border-radius: 4px; min-height: 24px; }
+QScrollBar::handle:vertical:hover { background: #9ca3af; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+QScrollBar:horizontal { background: #f5f5f5; height: 8px; border-radius: 4px; }
+QScrollBar::handle:horizontal { background: #d1d5db; border-radius: 4px; min-width: 24px; }
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+QLabel { color: #1f2937; }
+QMessageBox { background: #ffffff; }
+QMessageBox QLabel { color: #1f2937; }
+QPushButton { min-height: 32px; border-radius: 6px; border: none; font-weight: 600; }
+"""
+
+# Couleurs spécifiques aux widgets avec style inline, par thème
+_DARK = {
+    "header_bg":     "#181825",
+    "header_border": "#313244",
+    "logo_color":    "#cdd6f4",
+    "ver_color":     "#45475a",
+    "scroll_bg":     "#1e1e2e",
+    "log_bg":        "#11111b",
+    "log_border":    "#313244",
+    "muted":         "#a6adc8",
+    "dim":           "#45475a",
+    "dim2":          "#6c7086",
+    "accent":        "#89b4fa",
+    "btn_sec":       ("#2e2e42", "#3a3a52", "#a6adc8"),
+    "btn_dis_bg":    "#313244",
+    "btn_dis_fg":    "#6c7086",
+    "rm_normal":     "background: #2e1a1a; color: #f38ba8;",
+    "rm_hover":      "background: #dc2626; color: white;",
+    "swatch_border": "#45475a",
+    "html_bg":       "#11111b",
+    "html_color":    "#cdd6f4",
+    "log_colors":    {
+        "INFO": "#a6adc8", "OK": "#a6e3a1",
+        "ERR": "#f38ba8", "WARN": "#f9e2af", "START": "#89b4fa",
+    },
+}
+
+_LIGHT = {
+    "header_bg":     "#ffffff",
+    "header_border": "#e5e7eb",
+    "logo_color":    "#1f2937",
+    "ver_color":     "#9ca3af",
+    "scroll_bg":     "#f5f5f5",
+    "log_bg":        "#f8fafc",
+    "log_border":    "#e5e7eb",
+    "muted":         "#374151",
+    "dim":           "#6b7280",
+    "dim2":          "#6b7280",
+    "accent":        "#2563eb",
+    "btn_sec":       ("#e5e7eb", "#d1d5db", "#374151"),
+    "btn_dis_bg":    "#e5e7eb",
+    "btn_dis_fg":    "#9ca3af",
+    "rm_normal":     "background: #fee2e2; color: #dc2626;",
+    "rm_hover":      "background: #dc2626; color: white;",
+    "swatch_border": "#d1d5db",
+    "html_bg":       "#f8fafc",
+    "html_color":    "#1f2937",
+    "log_colors":    {
+        "INFO": "#6b7280", "OK": "#16a34a",
+        "ERR": "#dc2626", "WARN": "#b45309", "START": "#2563eb",
+    },
+}
+
 # ── Cross-thread signals ──────────────────────────────────────────────────────
 class Signals(QObject):
     log_append      = Signal(str, str)
@@ -313,19 +484,18 @@ class ActivationDialog(QDialog):
         root.addWidget(bar)
 
         body = QWidget()
-        body.setStyleSheet("background: #1e1e2e;")
         bl = QVBoxLayout(body)
         bl.setSpacing(14)
         bl.setContentsMargins(44, 30, 44, 30)
         root.addWidget(body)
 
         title = QLabel("🔑  Activation de l'application")
-        title.setStyleSheet("font-size: 17px; font-weight: 700; color: #cdd6f4;")
+        title.setStyleSheet("font-size: 17px; font-weight: 700;")
         title.setAlignment(Qt.AlignCenter)
         bl.addWidget(title)
 
         hint = QLabel("Saisissez votre clé de licence\n(format : ENVOI-XXXX-XXXX-XXXX)")
-        hint.setStyleSheet("color: #6c7086; font-size: 12px;")
+        hint.setStyleSheet("font-size: 12px;")
         hint.setAlignment(Qt.AlignCenter)
         bl.addWidget(hint)
 
@@ -352,13 +522,13 @@ class ActivationDialog(QDialog):
                 color: white; border-radius: 8px; font-size: 14px; font-weight: 700;
             }
             QPushButton:hover { background: #1d4ed8; }
-            QPushButton:disabled { background: #313244; color: #6c7086; }
+            QPushButton:disabled { opacity: 0.5; }
         """)
         self._btn.clicked.connect(self._activate)
         bl.addWidget(self._btn)
 
         contact = QLabel("Pour obtenir une licence : codeappli09@gmail.com")
-        contact.setStyleSheet("color: #45475a; font-size: 11px;")
+        contact.setStyleSheet("font-size: 11px;")
         contact.setAlignment(Qt.AlignCenter)
         bl.addWidget(contact)
 
@@ -371,7 +541,7 @@ class ActivationDialog(QDialog):
         self._btn.setEnabled(False)
         self._btn.setText("Vérification...")
         self._status.setText("Connexion au serveur...")
-        self._status.setStyleSheet("color: #6c7086; font-size: 13px;")
+        self._status.setStyleSheet("font-size: 13px;")
         sig = self._sig
 
         def _do():
@@ -401,20 +571,27 @@ class App(QMainWindow):
 
     _BTN_CONFIGS = {
         "primary":   ("#2563eb", "#1d4ed8", "#fff"),
-        "secondary": ("#2e2e42", "#3a3a52", "#a6adc8"),
         "danger":    ("#dc2626", "#b91c1c", "#fff"),
         "success":   ("#16a34a", "#15803d", "#fff"),
     }
 
+    _LOG_ICONS = {
+        "INFO": "ℹ", "OK": "✅", "ERR": "❌", "WARN": "⚠", "START": "🚀",
+    }
+
     def __init__(self):
         super().__init__()
-        self.cfg        = load_config()
-        self._stop_flag = False
-        self._sending   = False
-        self._boutons   = []
-        self._sig       = Signals()
+        self.cfg          = load_config()
+        self._dark_mode   = self.cfg.get("dark_mode", True)
+        self._stop_flag   = False
+        self._sending     = False
+        self._boutons     = []
+        self._sig         = Signals()
+        self._themed_widgets = []   # list of (widget, fn) where fn(colors) -> style str
+        self._secondary_btns = []   # secondary buttons to re-style on theme change
         self._connect_signals()
         self._build_ui()
+        self._apply_theme(self._dark_mode)
         self._lock_ui()
         QTimer.singleShot(200, self._check_licence)
 
@@ -435,6 +612,83 @@ class App(QMainWindow):
         self._do_log(f"Échec connexion : {msg}", "ERR")
         QMessageBox.critical(self, "Erreur SMTP", f"Connexion échouée :\n{msg}")
 
+    # ── Theme ─────────────────────────────────────────────────────────────────
+
+    def _toggle_theme(self):
+        self._apply_theme(not self._dark_mode)
+        self.cfg["dark_mode"] = self._dark_mode
+        save_config(self.cfg)
+
+    def _apply_theme(self, dark: bool):
+        self._dark_mode = dark
+        c = _DARK if dark else _LIGHT
+        QApplication.instance().setStyleSheet(DARK_STYLE if dark else LIGHT_STYLE)
+
+        # Header
+        self._header_widget.setStyleSheet(
+            f"background: {c['header_bg']}; border-bottom: 1px solid {c['header_border']};")
+        self._logo_lbl.setStyleSheet(
+            f"font-size: 20px; font-weight: 800; color: {c['logo_color']}; background: transparent;")
+        self._ver_lbl.setStyleSheet(
+            f"color: {c['ver_color']}; font-size: 12px; background: transparent;")
+        self._theme_btn.setText("☀  Clair" if dark else "🌙  Sombre")
+        self._theme_btn.setStyleSheet(
+            f"QPushButton {{ background: transparent; color: {c['ver_color']}; "
+            f"border: 1px solid {c['header_border']}; border-radius: 6px; "
+            f"padding: 4px 10px; font-size: 12px; min-height: 26px; }}"
+            f"QPushButton:hover {{ background: {c['header_border']}; }}"
+        )
+
+        # Design tab scroll area
+        self._design_scroll.setStyleSheet(
+            f"QScrollArea {{ border: none; background: {c['scroll_bg']}; }}")
+        self._design_inner.setStyleSheet(f"background: {c['scroll_bg']};")
+
+        # Log tab
+        self._log_edit.setStyleSheet(f"""
+            QTextEdit {{
+                background: {c['log_bg']};
+                border: 1px solid {c['log_border']};
+                border-radius: 8px;
+                font-family: "JetBrains Mono", "Fira Code", "Consolas", "Courier New", monospace;
+                font-size: 12px;
+                padding: 10px;
+            }}
+        """)
+
+        # Generic themed widgets
+        for widget, style_fn in self._themed_widgets:
+            widget.setStyleSheet(style_fn(c))
+
+        # Secondary buttons
+        bg, bg_h, fg = c["btn_sec"]
+        dis_bg, dis_fg = c["btn_dis_bg"], c["btn_dis_fg"]
+        sec_style = (
+            f"QPushButton {{ background: {bg}; color: {fg}; border: none; border-radius: 6px; "
+            f"padding: 8px 16px; font-weight: 600; font-size: 13px; min-height: 32px; }}"
+            f"QPushButton:hover {{ background: {bg_h}; }}"
+            f"QPushButton:pressed {{ background: {bg_h}; }}"
+            f"QPushButton:disabled {{ background: {dis_bg}; color: {dis_fg}; }}"
+        )
+        for btn in self._secondary_btns:
+            btn.setStyleSheet(sec_style)
+
+        # Bouton-row rm buttons
+        for entry in self._boutons:
+            if "rm" in entry:
+                entry["rm"].setStyleSheet(
+                    f"QPushButton {{ {c['rm_normal']} border-radius: 4px; font-weight: 700; }}"
+                    f"QPushButton:hover {{ {c['rm_hover']} }}"
+                )
+            if "swatch" in entry:
+                entry["swatch"].setStyleSheet(
+                    f"background: {entry['couleur']}; border-radius: 4px; "
+                    f"border: 1px solid {c['swatch_border']};"
+                )
+
+        # Log colors
+        self._LOG_COLORS = c["log_colors"]
+
     # ── Build UI ──────────────────────────────────────────────────────────────
 
     def _build_ui(self):
@@ -451,23 +705,29 @@ class App(QMainWindow):
         # Header
         header = QWidget()
         header.setFixedHeight(56)
-        header.setStyleSheet("background: #181825; border-bottom: 1px solid #313244;")
         hl = QHBoxLayout(header)
         hl.setContentsMargins(20, 0, 20, 0)
         logo = QLabel("MailCent <span style='color:#2563eb;'>Pro</span>")
         logo.setTextFormat(Qt.RichText)
-        logo.setStyleSheet("font-size: 20px; font-weight: 800; color: #cdd6f4; background: transparent;")
         hl.addWidget(logo)
         hl.addStretch()
-        ver = QLabel("v2.0  ·  Dark Edition")
-        ver.setStyleSheet("color: #45475a; font-size: 12px; background: transparent;")
+        ver = QLabel("v2.0")
         hl.addWidget(ver)
+        hl.addSpacing(12)
+        self._theme_btn = QPushButton("☀  Clair")
+        self._theme_btn.setCursor(Qt.PointingHandCursor)
+        self._theme_btn.clicked.connect(self._toggle_theme)
+        hl.addWidget(self._theme_btn)
         root.addWidget(header)
+        self._header_widget = header
+        self._logo_lbl = logo
+        self._ver_lbl = ver
 
         # Loading label (shown while checking licence)
         self._loading_lbl = QLabel("Vérification de la licence...")
         self._loading_lbl.setAlignment(Qt.AlignCenter)
-        self._loading_lbl.setStyleSheet("color: #45475a; font-size: 14px;")
+        self._themed_widgets.append(
+            (self._loading_lbl, lambda c: f"color: {c['dim']}; font-size: 14px;"))
         root.addWidget(self._loading_lbl, 1)
 
         # Tabs (hidden until licence validated)
@@ -515,7 +775,7 @@ class App(QMainWindow):
             row = QHBoxLayout()
             lbl = QLabel(label + " :")
             lbl.setFixedWidth(130)
-            lbl.setStyleSheet("color: #a6adc8;")
+            self._themed_widgets.append((lbl, lambda c: f"color: {c['muted']};"))
             inp = QLineEdit()
             if secret:
                 inp.setEchoMode(QLineEdit.Password)
@@ -527,7 +787,7 @@ class App(QMainWindow):
         tls_row = QHBoxLayout()
         lbl_tls = QLabel("Sécurité :")
         lbl_tls.setFixedWidth(130)
-        lbl_tls.setStyleSheet("color: #a6adc8;")
+        self._themed_widgets.append((lbl_tls, lambda c: f"color: {c['muted']};"))
         self._tls_check = QCheckBox("Utiliser TLS (STARTTLS)")
         tls_row.addWidget(lbl_tls)
         tls_row.addWidget(self._tls_check)
@@ -546,7 +806,7 @@ class App(QMainWindow):
         ol = QHBoxLayout(opt_grp)
         ol.setSpacing(10)
         lbl_d = QLabel("Délai entre envois :")
-        lbl_d.setStyleSheet("color: #a6adc8;")
+        self._themed_widgets.append((lbl_d, lambda c: f"color: {c['muted']};"))
         ol.addWidget(lbl_d)
         self._delai_spin = QSpinBox()
         self._delai_spin.setRange(1, 30)
@@ -554,7 +814,7 @@ class App(QMainWindow):
         self._delai_spin.setFixedWidth(72)
         ol.addWidget(self._delai_spin)
         hint_d = QLabel("secondes  (recommandé : 3–5 s pour éviter le spam)")
-        hint_d.setStyleSheet("color: #45475a; font-size: 12px;")
+        self._themed_widgets.append((hint_d, lambda c: f"color: {c['dim']}; font-size: 12px;"))
         ol.addWidget(hint_d)
         ol.addStretch()
         layout.addWidget(opt_grp)
@@ -569,15 +829,15 @@ class App(QMainWindow):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.NoFrame)
-        scroll.setStyleSheet("QScrollArea { border: none; background: #1e1e2e; }")
         outer.addWidget(scroll)
+        self._design_scroll = scroll
 
         inner = QWidget()
-        inner.setStyleSheet("background: #1e1e2e;")
         layout = QVBoxLayout(inner)
         layout.setContentsMargins(16, 8, 16, 16)
         layout.setSpacing(12)
         scroll.setWidget(inner)
+        self._design_inner = inner
 
         # Identity
         id_grp = QGroupBox("Identité")
@@ -588,7 +848,7 @@ class App(QMainWindow):
             row = QHBoxLayout()
             lbl = QLabel(label)
             lbl.setFixedWidth(160)
-            lbl.setStyleSheet("color: #a6adc8;")
+            self._themed_widgets.append((lbl, lambda c: f"color: {c['muted']};"))
             inp = QLineEdit()
             self._dv[key] = inp
             row.addWidget(lbl)
@@ -598,7 +858,7 @@ class App(QMainWindow):
         color_row = QHBoxLayout()
         lbl_c = QLabel("Couleur header :")
         lbl_c.setFixedWidth(160)
-        lbl_c.setStyleSheet("color: #a6adc8;")
+        self._themed_widgets.append((lbl_c, lambda c: f"color: {c['muted']};"))
         self._header_color_inp = QLineEdit()
         self._header_color_inp.setFixedWidth(90)
         self._header_color_inp.setText("#1e3a5f")
@@ -606,8 +866,6 @@ class App(QMainWindow):
         self._header_swatch = QPushButton()
         self._header_swatch.setFixedSize(32, 32)
         self._header_swatch.setCursor(Qt.PointingHandCursor)
-        self._header_swatch.setStyleSheet(
-            "background: #1e3a5f; border-radius: 4px; border: 1px solid #45475a;")
         self._header_swatch.clicked.connect(self._pick_header_color)
         color_row.addWidget(lbl_c)
         color_row.addWidget(self._header_color_inp)
@@ -623,11 +881,13 @@ class App(QMainWindow):
         hint_row = QHBoxLayout()
         self._lbl_hint = QLabel(
             "Corps du mail. Utilisez {colonne} pour insérer une valeur du CSV.")
-        self._lbl_hint.setStyleSheet("color: #6c7086; font-size: 12px;")
+        self._themed_widgets.append(
+            (self._lbl_hint, lambda c: f"color: {c['dim2']}; font-size: 12px;"))
         hint_row.addWidget(self._lbl_hint)
         hint_row.addStretch()
         self._html_check = QCheckBox("Mode HTML")
-        self._html_check.setStyleSheet("font-weight: 700; color: #89b4fa;")
+        self._themed_widgets.append(
+            (self._html_check, lambda c: f"font-weight: 700; color: {c['accent']};"))
         self._html_check.toggled.connect(self._toggle_html_mode)
         hint_row.addWidget(self._html_check)
         ml.addLayout(hint_row)
@@ -635,7 +895,8 @@ class App(QMainWindow):
         self._msg_edit.setMinimumHeight(130)
         ml.addWidget(self._msg_edit)
         self._lbl_cols = QLabel("Chargez un CSV pour voir les variables disponibles.")
-        self._lbl_cols.setStyleSheet("color: #45475a; font-size: 11px;")
+        self._themed_widgets.append(
+            (self._lbl_cols, lambda c: f"color: {c['dim']}; font-size: 11px;"))
         ml.addWidget(self._lbl_cols)
         layout.addWidget(msg_grp)
 
@@ -644,7 +905,8 @@ class App(QMainWindow):
         self._btn_grp_layout = QVBoxLayout(btn_grp)
         self._btn_grp_layout.setSpacing(6)
         hint_b = QLabel("Ajoutez jusqu'à 4 boutons (liens) dans le mail.")
-        hint_b.setStyleSheet("color: #6c7086; font-size: 12px;")
+        self._themed_widgets.append(
+            (hint_b, lambda c: f"color: {c['dim2']}; font-size: 12px;"))
         self._btn_grp_layout.addWidget(hint_b)
         self._bouton_rows_container = QWidget()
         self._bouton_rows_container.setStyleSheet("background: transparent;")
@@ -663,7 +925,7 @@ class App(QMainWindow):
         fl.setSpacing(8)
         lbl_f = QLabel("Texte footer :")
         lbl_f.setFixedWidth(130)
-        lbl_f.setStyleSheet("color: #a6adc8;")
+        self._themed_widgets.append((lbl_f, lambda c: f"color: {c['muted']};"))
         self._dv["footer"] = QLineEdit()
         fl.addWidget(lbl_f)
         fl.addWidget(self._dv["footer"])
@@ -699,7 +961,7 @@ class App(QMainWindow):
         r2 = QHBoxLayout()
         lbl_ec = QLabel("Colonne email :")
         lbl_ec.setFixedWidth(120)
-        lbl_ec.setStyleSheet("color: #a6adc8;")
+        self._themed_widgets.append((lbl_ec, lambda c: f"color: {c['muted']};"))
         self._email_col_combo = QComboBox()
         self._email_col_combo.setFixedWidth(200)
         r2.addWidget(lbl_ec)
@@ -713,7 +975,7 @@ class App(QMainWindow):
         sl = QHBoxLayout(subj_grp)
         lbl_s = QLabel("Objet :")
         lbl_s.setFixedWidth(60)
-        lbl_s.setStyleSheet("color: #a6adc8;")
+        self._themed_widgets.append((lbl_s, lambda c: f"color: {c['muted']};"))
         self._objet_input = QLineEdit()
         sl.addWidget(lbl_s)
         sl.addWidget(self._objet_input)
@@ -725,7 +987,8 @@ class App(QMainWindow):
         pl.setSpacing(6)
         hint_p = QLabel(
             "Nommez les PDF : Prenom_Nom.pdf, Nom_Prenom.pdf ou email.pdf — correspondance automatique.")
-        hint_p.setStyleSheet("color: #6c7086; font-size: 12px;")
+        self._themed_widgets.append(
+            (hint_p, lambda c: f"color: {c['dim2']}; font-size: 12px;"))
         pl.addWidget(hint_p)
         rp = QHBoxLayout()
         self._pdf_dir_input = QLineEdit()
@@ -737,7 +1000,8 @@ class App(QMainWindow):
         rp.addWidget(b_pdf)
         pl.addLayout(rp)
         self._lbl_pdf = QLabel("Aucun dossier sélectionné.")
-        self._lbl_pdf.setStyleSheet("color: #45475a; font-size: 12px;")
+        self._themed_widgets.append(
+            (self._lbl_pdf, lambda c: f"color: {c['dim']}; font-size: 12px;"))
         pl.addWidget(self._lbl_pdf)
         layout.addWidget(pdf_grp)
 
@@ -745,7 +1009,7 @@ class App(QMainWindow):
         d_grp = QGroupBox("Design utilisé")
         dl = QHBoxLayout(d_grp)
         info = QLabel("Le mail sera envoyé avec le design configuré dans l'onglet 🎨 Design email.")
-        info.setStyleSheet("color: #a6adc8;")
+        self._themed_widgets.append((info, lambda c: f"color: {c['muted']};"))
         prev2 = self._mk_btn("👁  Aperçu avant envoi", self._preview_html, "secondary")
         dl.addWidget(info)
         dl.addStretch()
@@ -758,7 +1022,8 @@ class App(QMainWindow):
         layout.addWidget(self._progress)
         self._lbl_progress = QLabel("")
         self._lbl_progress.setAlignment(Qt.AlignCenter)
-        self._lbl_progress.setStyleSheet("color: #6c7086; font-size: 12px;")
+        self._themed_widgets.append(
+            (self._lbl_progress, lambda c: f"color: {c['dim2']}; font-size: 12px;"))
         layout.addWidget(self._lbl_progress)
 
         send_row = QHBoxLayout()
@@ -783,16 +1048,6 @@ class App(QMainWindow):
         layout.setSpacing(8)
         self._log_edit = QTextEdit()
         self._log_edit.setReadOnly(True)
-        self._log_edit.setStyleSheet("""
-            QTextEdit {
-                background: #11111b;
-                border: 1px solid #313244;
-                border-radius: 8px;
-                font-family: "JetBrains Mono", "Fira Code", "Consolas", "Courier New", monospace;
-                font-size: 12px;
-                padding: 10px;
-            }
-        """)
         layout.addWidget(self._log_edit, 1)
         br = QHBoxLayout()
         br.setSpacing(8)
@@ -805,7 +1060,13 @@ class App(QMainWindow):
     # ── Button factory ────────────────────────────────────────────────────────
 
     def _mk_btn(self, text, callback, type_="primary"):
-        bg, bg_h, fg = self._BTN_CONFIGS.get(type_, self._BTN_CONFIGS["primary"])
+        if type_ == "secondary":
+            c = _DARK if self._dark_mode else _LIGHT
+            bg, bg_h, fg = c["btn_sec"]
+            dis_bg, dis_fg = c["btn_dis_bg"], c["btn_dis_fg"]
+        else:
+            bg, bg_h, fg = self._BTN_CONFIGS.get(type_, self._BTN_CONFIGS["primary"])
+            dis_bg, dis_fg = "#313244", "#6c7086"
         btn = QPushButton(text)
         btn.setCursor(Qt.PointingHandCursor)
         btn.clicked.connect(callback)
@@ -817,8 +1078,10 @@ class App(QMainWindow):
             }}
             QPushButton:hover {{ background: {bg_h}; }}
             QPushButton:pressed {{ background: {bg_h}; }}
-            QPushButton:disabled {{ background: #313244; color: #6c7086; }}
+            QPushButton:disabled {{ background: {dis_bg}; color: {dis_fg}; }}
         """)
+        if type_ == "secondary":
+            self._secondary_btns.append(btn)
         return btn
 
     # ── Licence ───────────────────────────────────────────────────────────────
@@ -887,8 +1150,9 @@ class App(QMainWindow):
         self._dv["footer"].setText(d.get("footer", "Cordialement"))
         couleur = d.get("header_couleur", "#1e3a5f")
         self._header_color_inp.setText(couleur)
+        c = _DARK if self._dark_mode else _LIGHT
         self._header_swatch.setStyleSheet(
-            f"background: {couleur}; border-radius: 4px; border: 1px solid #45475a;")
+            f"background: {couleur}; border-radius: 4px; border: 1px solid {c['swatch_border']};")
         self._msg_edit.setPlainText(d.get("message", ""))
         self._html_check.setChecked(d.get("html_mode", False))
         for b in d.get("boutons", []):
@@ -934,13 +1198,14 @@ class App(QMainWindow):
         }
 
     def _toggle_html_mode(self, checked):
+        c = _DARK if self._dark_mode else _LIGHT
         if checked:
-            self._msg_edit.setStyleSheet("""
-                QTextEdit {
-                    background: #11111b;
+            self._msg_edit.setStyleSheet(f"""
+                QTextEdit {{
+                    background: {c['html_bg']};
                     font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
-                    font-size: 12px; color: #cdd6f4; border: 1px solid #2563eb;
-                }
+                    font-size: 12px; color: {c['html_color']}; border: 1px solid #2563eb;
+                }}
             """)
             self._lbl_hint.setText(
                 "Mode HTML actif — écrivez du HTML brut. Utilisez {colonne} comme en mode texte.")
@@ -956,8 +1221,9 @@ class App(QMainWindow):
 
     def _update_color_swatch(self, val):
         if QColor(val).isValid():
+            c = _DARK if self._dark_mode else _LIGHT
             self._header_swatch.setStyleSheet(
-                f"background: {val}; border-radius: 4px; border: 1px solid #45475a;")
+                f"background: {val}; border-radius: 4px; border: 1px solid {c['swatch_border']};")
 
     def _preview_html(self):
         import webbrowser
@@ -995,7 +1261,8 @@ class App(QMainWindow):
 
         lbl = QLabel(f"Bouton {idx+1} :")
         lbl.setFixedWidth(72)
-        lbl.setStyleSheet("color: #a6adc8;")
+        c = _DARK if self._dark_mode else _LIGHT
+        lbl.setStyleSheet(f"color: {c['muted']};")
         texte_inp = QLineEdit(texte)
         texte_inp.setPlaceholderText("Texte")
         texte_inp.setFixedWidth(148)
@@ -1006,7 +1273,7 @@ class App(QMainWindow):
         swatch.setFixedSize(32, 32)
         swatch.setCursor(Qt.PointingHandCursor)
         swatch.setStyleSheet(
-            f"background: {couleur}; border-radius: 4px; border: 1px solid #45475a;")
+            f"background: {couleur}; border-radius: 4px; border: 1px solid {c['swatch_border']};")
 
         entry = {
             "row": row_w, "texte": texte_inp,
@@ -1015,21 +1282,24 @@ class App(QMainWindow):
         }
 
         def pick(e=entry):
-            c = QColorDialog.getColor(QColor(e["couleur"]), self, "Couleur du bouton")
-            if c.isValid():
-                e["couleur"] = c.name()
+            col = QColorDialog.getColor(QColor(e["couleur"]), self, "Couleur du bouton")
+            if col.isValid():
+                e["couleur"] = col.name()
+                tc = _DARK if self._dark_mode else _LIGHT
                 e["swatch"].setStyleSheet(
-                    f"background: {c.name()}; border-radius: 4px; border: 1px solid #45475a;")
+                    f"background: {col.name()}; border-radius: 4px; "
+                    f"border: 1px solid {tc['swatch_border']};")
 
         swatch.clicked.connect(pick)
 
         rm = QPushButton("✕")
         rm.setFixedSize(32, 32)
         rm.setCursor(Qt.PointingHandCursor)
-        rm.setStyleSheet("""
-            QPushButton { background: #2e1a1a; color: #f38ba8; border-radius: 4px; font-weight: 700; }
-            QPushButton:hover { background: #dc2626; color: white; }
-        """)
+        rm.setStyleSheet(
+            f"QPushButton {{ {c['rm_normal']} border-radius: 4px; font-weight: 700; }}"
+            f"QPushButton:hover {{ {c['rm_hover']} }}"
+        )
+        entry["rm"] = rm
 
         def remove(e=entry):
             e["row"].deleteLater()
@@ -1079,9 +1349,9 @@ class App(QMainWindow):
                 if cur in cols:
                     self._email_col_combo.setCurrentText(cur)
                 else:
-                    for c in cols:
-                        if c.strip().lower() in ("email", "mail", "e-mail", "courriel"):
-                            self._email_col_combo.setCurrentText(c)
+                    for col in cols:
+                        if col.strip().lower() in ("email", "mail", "e-mail", "courriel"):
+                            self._email_col_combo.setCurrentText(col)
                             break
                 self._update_col_hint(cols)
         except Exception as e:
@@ -1091,7 +1361,8 @@ class App(QMainWindow):
     def _update_col_hint(self, cols):
         placeholders = "   ".join(f"{{{c}}}" for c in cols)
         self._lbl_cols.setText(f"Variables disponibles : {placeholders}")
-        self._lbl_cols.setStyleSheet("color: #89b4fa; font-size: 11px;")
+        c = _DARK if self._dark_mode else _LIGHT
+        self._lbl_cols.setStyleSheet(f"color: {c['accent']}; font-size: 11px;")
 
     # ── PDF ───────────────────────────────────────────────────────────────────
 
@@ -1332,13 +1603,7 @@ class App(QMainWindow):
 
     # ── Log ───────────────────────────────────────────────────────────────────
 
-    _LOG_COLORS = {
-        "INFO": "#a6adc8", "OK": "#a6e3a1",
-        "ERR":  "#f38ba8", "WARN": "#f9e2af", "START": "#89b4fa",
-    }
-    _LOG_ICONS = {
-        "INFO": "ℹ", "OK": "✅", "ERR": "❌", "WARN": "⚠", "START": "🚀",
-    }
+    _LOG_COLORS = _DARK["log_colors"]
 
     def _do_log(self, msg, level="INFO"):
         color = self._LOG_COLORS.get(level, "#a6adc8")
@@ -1371,7 +1636,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setApplicationName("MailCent Pro")
     app.setStyle("Fusion")
-    app.setStyleSheet(DARK_STYLE)
     window = App()
     window.show()
     sys.exit(app.exec())

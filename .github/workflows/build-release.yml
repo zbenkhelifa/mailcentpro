@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag de release (ex: v2.0)"
+        description: "Tag de release (ex: v2.1)"
         required: true
-        default: "v2.0"
+        default: "v2.1"
 
 jobs:
   build:
@@ -106,7 +106,11 @@ jobs:
           body: |
             ## MailCent Pro ${{ github.event.inputs.tag }}
 
-            Interface redessinée avec **PySide6** — thème dark professionnel.
+            Interface **PySide6** — thème dark et clair commutables à la volée.
+
+            ### Nouveautés ${{ github.event.inputs.tag }}
+            - 🌙 / ☀ Bascule dark / clair persistante (bouton dans le header)
+            - Couleurs du log adaptées au thème actif
 
             ### Télécharger
             | Système | Fichier |
