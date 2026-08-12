@@ -34,10 +34,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.10
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       # ── Dépendances système Linux ──────────────────────────────────────────
       - name: Dépendances système (Linux)
@@ -50,30 +50,16 @@ jobs:
             libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
             libxcb-xinerama0 zip
 
-      # ── PySide6 + PyInstaller + PyArmor 7 ─────────────────────────────────────
-      - name: Installer PySide6 + PyInstaller + PyArmor
-        run: pip install PySide6 pyinstaller "pyarmor<8"
+      # ── PySide6 + PyInstaller ──────────────────────────────────────────────────
+      - name: Installer PySide6 + PyInstaller
+        run: pip install PySide6 pyinstaller
 
-      # ── Protection PyArmor ────────────────────────────────────────────────────
-      - name: Protéger le code source avec PyArmor
-        shell: bash
-        run: |
-          pyarmor obfuscate --output pyarmor_dist mailcentpro.py
-          python - <<'PYEOF'
-          import os
-          txt = open("mailcentpro.spec").read()
-          txt = txt.replace('["mailcentpro.py"]', '["pyarmor_dist/mailcentpro.py"]')
-          txt = txt.replace('pathex=[],', 'pathex=["pyarmor_dist"],')
-          txt = txt.replace('"PySide6.QtCore"', '"pytransform", "PySide6.QtCore"')
-          open("mailcentpro_protected.spec", "w").write(txt)
-          PYEOF
-
-      # ── Build via spec protégé ─────────────────────────────────────────────
-      - name: Compiler avec mailcentpro_protected.spec
+      # ── Build via spec commun ──────────────────────────────────────────────
+      - name: Compiler avec mailcentpro.spec
         shell: bash
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python -m PyInstaller mailcentpro_protected.spec --clean --noconfirm
+        run: python -m PyInstaller mailcentpro.spec --clean --noconfirm
 
       # ── Dossier data ───────────────────────────────────────────────────────
       - name: Copier data (Windows / Linux)
