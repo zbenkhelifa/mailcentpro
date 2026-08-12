@@ -50,23 +50,21 @@ jobs:
             libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
             libxcb-xinerama0 zip
 
-      # ── PySide6 + PyInstaller + PyArmor ───────────────────────────────────────
+      # ── PySide6 + PyInstaller + PyArmor 7 ─────────────────────────────────────
       - name: Installer PySide6 + PyInstaller + PyArmor
-        run: pip install PySide6 pyinstaller pyarmor
+        run: pip install PySide6 pyinstaller "pyarmor<8"
 
       # ── Protection PyArmor ────────────────────────────────────────────────────
       - name: Protéger le code source avec PyArmor
         shell: bash
         run: |
-          pyarmor gen -O pyarmor_dist mailcentpro.py
+          pyarmor obfuscate --output pyarmor_dist mailcentpro.py
           python - <<'PYEOF'
-          import glob, os
-          dirs = sorted(glob.glob("pyarmor_dist/pyarmor_runtime_*"))
-          rname = os.path.basename(dirs[0]) if dirs else "pyarmor_runtime_0"
+          import os
           txt = open("mailcentpro.spec").read()
           txt = txt.replace('["mailcentpro.py"]', '["pyarmor_dist/mailcentpro.py"]')
           txt = txt.replace('pathex=[],', 'pathex=["pyarmor_dist"],')
-          txt = txt.replace('"PySide6.QtCore"', '"' + rname + '", "PySide6.QtCore"')
+          txt = txt.replace('"PySide6.QtCore"', '"pytransform", "PySide6.QtCore"')
           open("mailcentpro_protected.spec", "w").write(txt)
           PYEOF
 

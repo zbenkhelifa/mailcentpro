@@ -26,7 +26,7 @@ echo.
 REM ── Dépendances ───────────────────────────────────────────────────────────
 echo 📦  Installation des dépendances...
 pip install --quiet --upgrade pip
-pip install --quiet PySide6 pyinstaller pyarmor
+pip install --quiet PySide6 pyinstaller "pyarmor<8"
 if errorlevel 1 (
     echo ❌  Échec installation des dépendances.
     pause
@@ -43,20 +43,18 @@ if exist MailCentPro-Windows.zip del /Q MailCentPro-Windows.zip
 
 REM ── Protection PyArmor ────────────────────────────────────────────────────
 echo 🔒  Protection du code source...
-pyarmor gen -O pyarmor_dist mailcentpro.py
+pyarmor obfuscate --output pyarmor_dist mailcentpro.py
 if errorlevel 1 (
     echo ❌  Protection PyArmor échouée.
     pause
     exit /b 1
 )
 
-echo import glob, os > _patch_spec.py
-echo dirs = sorted(glob.glob("pyarmor_dist/pyarmor_runtime_*")) >> _patch_spec.py
-echo rname = os.path.basename(dirs[0]) if dirs else "pyarmor_runtime_0" >> _patch_spec.py
+echo import os > _patch_spec.py
 echo txt = open("mailcentpro.spec").read() >> _patch_spec.py
 echo txt = txt.replace('["mailcentpro.py"]', '["pyarmor_dist/mailcentpro.py"]') >> _patch_spec.py
 echo txt = txt.replace('pathex=[],', 'pathex=["pyarmor_dist"],') >> _patch_spec.py
-echo txt = txt.replace('"PySide6.QtCore"', '"' + rname + '", "PySide6.QtCore"') >> _patch_spec.py
+echo txt = txt.replace('"PySide6.QtCore"', '"pytransform", "PySide6.QtCore"') >> _patch_spec.py
 echo open("mailcentpro_protected.spec", "w").write(txt) >> _patch_spec.py
 python _patch_spec.py
 del _patch_spec.py
