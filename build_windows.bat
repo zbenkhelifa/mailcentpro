@@ -26,7 +26,7 @@ echo.
 REM ── Dépendances ───────────────────────────────────────────────────────────
 echo 📦  Installation des dépendances...
 pip install --quiet --upgrade pip
-pip install --quiet PySide6 pyinstaller
+pip install --quiet PySide6 pyinstaller pyarmor
 if errorlevel 1 (
     echo ❌  Échec installation des dépendances.
     pause
@@ -36,14 +36,37 @@ echo ✅  Dépendances installées.
 echo.
 
 REM ── Nettoyage préalable ───────────────────────────────────────────────────
-if exist build     rmdir /S /Q build
-if exist dist      rmdir /S /Q dist
+if exist build              rmdir /S /Q build
+if exist dist               rmdir /S /Q dist
+if exist pyarmor_dist       rmdir /S /Q pyarmor_dist
 if exist MailCentPro-Windows.zip del /Q MailCentPro-Windows.zip
+
+REM ── Protection PyArmor ────────────────────────────────────────────────────
+echo 🔒  Protection du code source...
+pyarmor gen -O pyarmor_dist mailcentpro.py
+if errorlevel 1 (
+    echo ❌  Protection PyArmor échouée.
+    pause
+    exit /b 1
+)
+
+echo import glob, os > _patch_spec.py
+echo dirs = sorted(glob.glob("pyarmor_dist/pyarmor_runtime_*")) >> _patch_spec.py
+echo rname = os.path.basename(dirs[0]) if dirs else "pyarmor_runtime_0" >> _patch_spec.py
+echo txt = open("mailcentpro.spec").read() >> _patch_spec.py
+echo txt = txt.replace('["mailcentpro.py"]', '["pyarmor_dist/mailcentpro.py"]') >> _patch_spec.py
+echo txt = txt.replace('pathex=[],', 'pathex=["pyarmor_dist"],') >> _patch_spec.py
+echo txt = txt.replace('"PySide6.QtCore"', '"' + rname + '", "PySide6.QtCore"') >> _patch_spec.py
+echo open("mailcentpro_protected.spec", "w").write(txt) >> _patch_spec.py
+python _patch_spec.py
+del _patch_spec.py
+echo ✅  Code source protégé.
+echo.
 
 REM ── Compilation ───────────────────────────────────────────────────────────
 echo 🔨  Compilation (peut prendre 2-3 minutes)...
 echo.
-python -m PyInstaller mailcentpro.spec --clean --noconfirm
+python -m PyInstaller mailcentpro_protected.spec --clean --noconfirm
 
 if errorlevel 1 (
     echo.
@@ -70,8 +93,10 @@ if not exist "MailCentPro-Windows.zip" (
 )
 
 REM ── Nettoyage ─────────────────────────────────────────────────────────────
-rmdir /S /Q build >nul 2>&1
-rmdir /S /Q dist  >nul 2>&1
+rmdir /S /Q build             >nul 2>&1
+rmdir /S /Q dist              >nul 2>&1
+rmdir /S /Q pyarmor_dist      >nul 2>&1
+if exist mailcentpro_protected.spec del /Q mailcentpro_protected.spec >nul 2>&1
 
 echo.
 echo ╔══════════════════════════════════════════════╗

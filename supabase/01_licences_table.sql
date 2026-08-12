@@ -33,7 +33,9 @@ CREATE POLICY "no_public_access" ON licences
 -- ─────────────────────────────────────────────────────────────────
 -- Vue pour dashboard (optionnel)
 -- ─────────────────────────────────────────────────────────────────
-CREATE OR REPLACE VIEW licences_dashboard AS
+CREATE OR REPLACE VIEW licences_dashboard
+WITH (security_invoker = true)
+AS
 SELECT
     id,
     cle,

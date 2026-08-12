@@ -24,15 +24,32 @@ echo "✅  $(python3 --version)"
 echo ""
 echo "📦  Installation des dépendances..."
 pip3 install --quiet --upgrade pip
-pip3 install --quiet PySide6 pyinstaller
+pip3 install --quiet PySide6 pyinstaller pyarmor
 
 # ── Nettoyage préalable ───────────────────────────────────────────
-rm -rf build dist MailCentPro-Linux.zip
+rm -rf build dist pyarmor_dist MailCentPro-Linux.zip
+
+# ── Protection PyArmor ────────────────────────────────────────────
+echo ""
+echo "🔒  Protection du code source..."
+pyarmor gen -O pyarmor_dist mailcentpro.py
+
+python3 - <<'PYEOF'
+import glob, os
+dirs = sorted(glob.glob("pyarmor_dist/pyarmor_runtime_*"))
+rname = os.path.basename(dirs[0]) if dirs else "pyarmor_runtime_0"
+txt = open("mailcentpro.spec").read()
+txt = txt.replace('["mailcentpro.py"]', '["pyarmor_dist/mailcentpro.py"]')
+txt = txt.replace('pathex=[],', 'pathex=["pyarmor_dist"],')
+txt = txt.replace('"PySide6.QtCore"', '"' + rname + '", "PySide6.QtCore"')
+open("mailcentpro_protected.spec", "w").write(txt)
+PYEOF
+echo "✅  Code source protégé."
 
 # ── Compilation ───────────────────────────────────────────────────
 echo ""
 echo "🔨  Compilation (peut prendre 1-2 minutes)..."
-python3 -m PyInstaller mailcentpro.spec --clean --noconfirm
+python3 -m PyInstaller mailcentpro_protected.spec --clean --noconfirm
 
 # ── Vérification ──────────────────────────────────────────────────
 if [ ! -f "dist/MailCentPro/MailCentPro" ]; then
@@ -69,4 +86,4 @@ echo "╚═══════════════════════�
 echo ""
 
 # Nettoyage build intermédiaire
-rm -rf build dist
+rm -rf build dist pyarmor_dist mailcentpro_protected.spec

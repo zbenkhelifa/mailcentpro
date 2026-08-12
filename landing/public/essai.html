@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MailCent Pro — Essai gratuit 1 mois</title>
+  <meta name="description" content="Testez MailCent Pro gratuitement pendant 1 mois. Aucune carte bancaire requise. Recevez votre clé de licence par email en quelques secondes.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:  #1e3a5f;
+      --blue:  #2563eb;
+      --light: #eff6ff;
+      --gray:  #64748b;
+      --text:  #1e293b;
+      --white: #ffffff;
+      --green: #16a34a;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: var(--white);
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+    }
+    .logo { color: var(--white); font-size: 1.2rem; font-weight: 700; }
+    .logo span { color: #93c5fd; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #2d5a9e 100%);
+      color: var(--white);
+      text-align: center;
+      padding: 80px 24px 100px;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.15);
+      color: #bfdbfe;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      max-width: 700px;
+      margin: 0 auto 20px;
+    }
+    .hero h1 em { color: #93c5fd; font-style: normal; }
+    .hero p {
+      font-size: 1.15rem;
+      color: #bfdbfe;
+      max-width: 560px;
+      margin: 0 auto 36px;
+    }
+    .hero-cta {
+      display: inline-block;
+      background: var(--white);
+      color: var(--navy);
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,.2);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.25); }
+    .hero-note { margin-top: 16px; font-size: 0.85rem; color: #93c5fd; }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 80px 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .section-title {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 48px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 28px;
+    }
+    .card {
+      background: var(--light);
+      border-radius: 12px;
+      padding: 28px 24px;
+    }
+    .card-icon { font-size: 2rem; margin-bottom: 12px; }
+    .card h3 { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+    .card p  { font-size: 0.9rem; color: var(--gray); }
+
+    /* ── HOW IT WORKS ── */
+    .howto {
+      background: var(--navy);
+      color: var(--white);
+      padding: 80px 24px;
+      text-align: center;
+    }
+    .howto .section-title { color: var(--white); }
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 32px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .step { max-width: 220px; }
+    .step-num {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: var(--white);
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .step h4 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .step p  { font-size: 0.875rem; color: #93c5fd; }
+
+    /* ── TRIAL SECTION ── */
+    .trial-section {
+      padding: 80px 24px;
+      max-width: 680px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .trial-card {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border: 2px solid var(--green);
+      border-radius: 16px;
+      padding: 40px 36px;
+      text-align: left;
+    }
+    .trial-badge {
+      display: inline-block;
+      background: var(--green);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .trial-card h3 { font-size: 1.5rem; font-weight: 800; color: #14532d; margin-bottom: 10px; }
+    .trial-card > p { font-size: 0.95rem; color: #166534; margin-bottom: 24px; }
+
+    .trial-perks {
+      list-style: none;
+      margin-bottom: 28px;
+    }
+    .trial-perks li {
+      font-size: 0.9rem;
+      color: #166534;
+      padding: 5px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .trial-perks li::before { content: "✓"; color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+    .trial-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .trial-form input[type="email"] {
+      flex: 1;
+      min-width: 220px;
+      padding: 13px 16px;
+      border: 2px solid #86efac;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      background: #fff;
+      color: #1e293b;
+      transition: border-color .2s;
+    }
+    .trial-form input[type="email"]:focus { border-color: var(--green); }
+    .trial-form input[type="email"]::placeholder { color: #94a3b8; }
+    .btn-trial {
+      background: var(--green);
+      color: #fff;
+      padding: 14px 26px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity .2s, transform .2s;
+    }
+    .btn-trial:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+    .btn-trial:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    .trial-msg {
+      margin-top: 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: none;
+    }
+    .trial-msg.ok  { color: #14532d; display: block; }
+    .trial-msg.err { color: #991b1b; display: block; }
+
+    .trial-reassure {
+      margin-top: 18px;
+      font-size: 0.82rem;
+      color: #64748b;
+      text-align: center;
+    }
+
+    /* ── FAQ ── */
+    .faq {
+      background: #f8fafc;
+      padding: 80px 24px;
+    }
+    .faq-inner { max-width: 700px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid #e2e8f0; padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-item h4 { font-size: 1rem; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+    .faq-item p  { font-size: 0.9rem; color: var(--gray); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy);
+      color: #93c5fd;
+      text-align: center;
+      padding: 24px;
+      font-size: 0.85rem;
+    }
+    footer a { color: #bfdbfe; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 520px) {
+      .hero { padding: 60px 20px 80px; }
+      .trial-card { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">MailCent<span>Pro</span></div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge">Essai gratuit — sans carte bancaire</div>
+  <h1>Testez MailCent Pro <em>gratuitement</em> pendant 1 mois</h1>
+  <p>Importez votre CSV, rédigez votre message avec <strong style="color:#93c5fd">{variables}</strong>, joignez un PDF par destinataire — MailCent Pro envoie un mail unique à chacun.</p>
+  <a class="hero-cta" href="#essai">Obtenir ma clé gratuite</a>
+  <p class="hero-note">Aucune carte bancaire · Clé envoyée en quelques secondes · 1 mois complet</p>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <h2 class="section-title">Tout ce dont vous avez besoin</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">📂</div>
+      <h3>Import CSV universel</h3>
+      <p>Importez n'importe quel CSV — élèves, contacts, clients, membres. Toutes les colonnes sont automatiquement disponibles.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">✏️</div>
+      <h3>Messages avec variables</h3>
+      <p>Écrivez <code style="background:#dbeafe;padding:1px 5px;border-radius:4px;font-size:.85em">{prenom}</code>, <code style="background:#dbeafe;padding:1px 5px;border-radius:4px;font-size:.85em">{nom}</code> ou n'importe quelle colonne de votre CSV pour personnaliser chaque mail.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📎</div>
+      <h3>PDF par destinataire</h3>
+      <p>Déposez vos PDF dans un dossier (nommés <em>Prenom_Nom.pdf</em> ou <em>email.pdf</em>) — chaque destinataire reçoit son fichier en pièce jointe.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🖊️</div>
+      <h3>Éditeur texte ou HTML</h3>
+      <p>Rédigez en texte simple ou activez le mode HTML pour composer des mails entièrement sur mesure avec vos propres balises.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⏱️</div>
+      <h3>Anti-spam intégré</h3>
+      <p>Un délai configurable entre chaque envoi évite d'être bloqué par votre serveur mail.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🖥️</div>
+      <h3>Application bureau légère</h3>
+      <p>Zéro installation complexe, zéro dépendance. Fonctionne sur Windows, Mac et Linux.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔒</div>
+      <h3>Vos données restent chez vous</h3>
+      <p>Aucune donnée n'est envoyée à un serveur externe. Votre liste et vos fichiers restent sur votre ordinateur.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="howto">
+  <h2 class="section-title">Comment ça marche ?</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h4>Demandez votre clé gratuite</h4>
+      <p>Entrez votre email ci-dessous — vous recevez votre clé d'essai en quelques secondes.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h4>Téléchargez l'application</h4>
+      <p>Un simple fichier à extraire, aucune installation requise. Windows, Mac ou Linux.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h4>Activez votre licence</h4>
+      <p>Saisissez la clé reçue par email au premier lancement de l'application.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h4>Rédigez et envoyez</h4>
+      <p>Chargez votre CSV, écrivez votre message avec {variables} et envoyez en un clic.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TRIAL FORM -->
+<section class="trial-section" id="essai">
+  <h2 class="section-title">Votre essai gratuit d'1 mois</h2>
+  <div class="trial-card">
+    <div class="trial-badge">Offre limitée · 1 essai par adresse</div>
+    <h3>Recevez votre clé de licence</h3>
+    <p>Entrez votre email — vous recevez instantanément une clé valable 31 jours. Aucune carte bancaire requise.</p>
+    <ul class="trial-perks">
+      <li>Accès complet à toutes les fonctionnalités</li>
+      <li>Jusqu'à 3 postes activés simultanément</li>
+      <li>Aucun engagement, aucun renouvellement automatique</li>
+      <li>Clé envoyée par email en moins d'une minute</li>
+    </ul>
+    <div class="trial-form">
+      <input type="email" id="trial-email" placeholder="votre@email.fr" autocomplete="email" required>
+      <button class="btn-trial" id="trial-btn" onclick="demanderEssai()">Recevoir ma clé →</button>
+    </div>
+    <p class="trial-msg" id="trial-msg"></p>
+    <p class="trial-reassure">Pas de spam · Un seul email avec votre clé · Pas de relances commerciales</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="faq-inner">
+    <h2 class="section-title">Questions fréquentes</h2>
+    <div class="faq-item">
+      <h4>Comment fonctionne l'essai gratuit d'un mois ?</h4>
+      <p>Entrez votre email dans le formulaire ci-dessus. Vous recevez immédiatement une clé de licence valable 31 jours, sans carte bancaire et sans engagement. Un seul essai par adresse email.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Sur combien d'ordinateurs puis-je installer l'application ?</h4>
+      <p>Votre licence d'essai autorise jusqu'à 3 activations simultanées. Vous pouvez désactiver un poste pour en activer un autre.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Comment personnaliser le contenu de chaque mail ?</h4>
+      <p>Rédigez votre message dans l'onglet Design en utilisant <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px">{nomcolonne}</code> à l'endroit voulu. MailCent Pro remplace automatiquement ces balises par les valeurs de chaque ligne du CSV lors de l'envoi.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Puis-je joindre un PDF différent pour chaque destinataire ?</h4>
+      <p>Oui. Placez vos PDF dans un dossier en les nommant <em>Prenom_Nom.pdf</em> ou <em>email@domaine.pdf</em>. MailCent Pro associe automatiquement chaque fichier au bon destinataire.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Quel format de fichier CSV est accepté ?</h4>
+      <p>Tout fichier CSV avec une colonne contenant les adresses email. Vous choisissez cette colonne dans l'application — les autres colonnes deviennent automatiquement des variables <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px">{variable}</code> utilisables dans votre message.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Les données de mes destinataires sont-elles sécurisées ?</h4>
+      <p>Oui. MailCent Pro fonctionne entièrement en local. Aucun fichier ni donnée n'est envoyé à nos serveurs.</p>
+    </div>
+    <div class="faq-item">
+      <h4>L'application fonctionne-t-elle sur Mac ou Linux ?</h4>
+      <p>Oui — des versions natives sont disponibles pour Windows, Mac (macOS 12+) et Linux (Ubuntu/Debian).</p>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section id="download" style="padding:80px 24px;background:#fff;text-align:center;">
+  <h2 class="section-title">Télécharger MailCent Pro</h2>
+  <p style="color:var(--gray);max-width:460px;margin:0 auto 40px;">Disponible sur Windows, Mac et Linux. Activez l'application avec la clé reçue par email.</p>
+
+  <div style="max-width:460px;margin:0 auto;">
+    <p style="font-size:.8rem;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Votre système</p>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <div id="dl-windows" onclick="selectDL('windows')"
+           style="flex:1;padding:12px 6px;border:2px solid #2563eb;border-radius:8px;background:#eff6ff;cursor:pointer;text-align:center;font-size:.85rem;font-weight:600;color:#1e40af;transition:all .2s;">
+        <img src="windows.png" alt="Windows" style="width:32px;height:28px;object-fit:contain;display:block;margin:0 auto 4px;">Windows
+      </div>
+      <div id="dl-mac" onclick="selectDL('mac')"
+           style="flex:1;padding:12px 6px;border:2px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;text-align:center;font-size:.85rem;font-weight:600;color:#64748b;transition:all .2s;">
+        <img src="apple.png" alt="Mac" style="width:32px;height:28px;object-fit:contain;display:block;margin:0 auto 4px;">Mac
+      </div>
+      <div id="dl-linux" onclick="selectDL('linux')"
+           style="flex:1;padding:12px 6px;border:2px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;text-align:center;font-size:.85rem;font-weight:600;color:#64748b;transition:all .2s;">
+        <img src="linux.png" alt="Linux" style="width:32px;height:28px;object-fit:contain;display:block;margin:0 auto 4px;">Linux
+      </div>
+    </div>
+
+    <a id="dl-btn" href="https://github.com/zbenkhelifa/mailcentpro/releases/latest/download/MailCentPro-Windows.zip"
+       style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--blue);color:#fff;
+              text-decoration:none;font-size:1rem;font-weight:700;padding:15px;border-radius:10px;
+              transition:opacity .2s,transform .2s;margin-bottom:10px;">
+      ⬇️ <span id="dl-label">Télécharger pour Windows (.zip)</span>
+    </a>
+    <p id="dl-note" style="font-size:.8rem;color:var(--gray);">Windows 10 ou supérieur · Extraire et lancer MailCentPro.exe</p>
+
+    <p style="margin-top:20px;font-size:.82rem;color:#94a3b8;">
+      Obtenez d'abord votre clé gratuite.
+      <a href="#essai" style="color:var(--blue);text-decoration:none;">Demander la clé →</a>
+    </p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 MailCent Pro · <a href="mailto:codeappli09@gmail.com">codeappli09@gmail.com</a></p>
+</footer>
+
+<script>
+  const ESSAI_URL = "https://tcexvmzfesnbhfjcgrnz.supabase.co/functions/v1/essai-gratuit";
+
+  async function demanderEssai() {
+    const input = document.getElementById("trial-email");
+    const btn   = document.getElementById("trial-btn");
+    const msg   = document.getElementById("trial-msg");
+    const email = input.value.trim();
+
+    msg.className = "trial-msg";
+    msg.textContent = "";
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      msg.className = "trial-msg err";
+      msg.textContent = "Veuillez saisir une adresse email valide.";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Envoi en cours…";
+
+    try {
+      const resp = await fetch(ESSAI_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await resp.json();
+
+      if (data.succes) {
+        msg.className = "trial-msg ok";
+        msg.textContent = "Clé envoyée ! Vérifiez votre boîte mail (et les spams).";
+        input.value = "";
+        btn.textContent = "Envoyé ✓";
+      } else {
+        msg.className = "trial-msg err";
+        msg.textContent = data.message || "Erreur — réessayez.";
+        btn.disabled = false;
+        btn.textContent = "Recevoir ma clé →";
+      }
+    } catch (_) {
+      msg.className = "trial-msg err";
+      msg.textContent = "Erreur réseau — réessayez dans quelques instants.";
+      btn.disabled = false;
+      btn.textContent = "Recevoir ma clé →";
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("trial-email")
+      .addEventListener("keydown", e => { if (e.key === "Enter") demanderEssai(); });
+  });
+
+  const DL_BASE = "https://github.com/zbenkhelifa/mailcentpro/releases/latest/download/";
+  const DL_CFG = {
+    windows: { file: "MailCentPro-Windows.zip", label: "Télécharger pour Windows (.zip)", note: "Windows 10 ou supérieur · Extraire et lancer MailCentPro.exe" },
+    mac:     { file: "MailCentPro-Mac.zip",     label: "Télécharger pour Mac (.zip)",     note: "macOS 12 ou supérieur · Extraire et lancer MailCentPro" },
+    linux:   { file: "MailCentPro-Linux.zip",   label: "Télécharger pour Linux (.zip)",   note: "Ubuntu / Debian · Extraire, rendre exécutable et lancer" },
+  };
+  function selectDL(os) {
+    ["windows", "mac", "linux"].forEach(id => {
+      const t = document.getElementById("dl-" + id);
+      t.style.borderColor = "#e2e8f0";
+      t.style.background  = "#f8fafc";
+      t.style.color       = "#64748b";
+    });
+    const tab = document.getElementById("dl-" + os);
+    tab.style.borderColor = "#2563eb";
+    tab.style.background  = "#eff6ff";
+    tab.style.color       = "#1e40af";
+    document.getElementById("dl-btn").href          = DL_BASE + DL_CFG[os].file;
+    document.getElementById("dl-label").textContent = DL_CFG[os].label;
+    document.getElementById("dl-note").textContent  = DL_CFG[os].note;
+  }
+  (function() {
+    const ua = navigator.userAgent;
+    selectDL(/Windows/i.test(ua) ? "windows" : /Mac|iPhone|iPad/i.test(ua) ? "mac" : "linux");
+  })();
+</script>
+
+</body>
+</html>

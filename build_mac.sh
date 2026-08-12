@@ -26,15 +26,32 @@ echo "✅  $(python3 --version)"
 echo ""
 echo "📦  Installation des dépendances..."
 pip3 install --quiet --upgrade pip
-pip3 install --quiet PySide6 pyinstaller
+pip3 install --quiet PySide6 pyinstaller pyarmor
 
 # ── Nettoyage préalable ───────────────────────────────────────────
-rm -rf build dist MailCentPro-Mac.zip
+rm -rf build dist pyarmor_dist MailCentPro-Mac.zip
+
+# ── Protection PyArmor ────────────────────────────────────────────
+echo ""
+echo "🔒  Protection du code source..."
+pyarmor gen -O pyarmor_dist mailcentpro.py
+
+python3 - <<'PYEOF'
+import glob, os
+dirs = sorted(glob.glob("pyarmor_dist/pyarmor_runtime_*"))
+rname = os.path.basename(dirs[0]) if dirs else "pyarmor_runtime_0"
+txt = open("mailcentpro.spec").read()
+txt = txt.replace('["mailcentpro.py"]', '["pyarmor_dist/mailcentpro.py"]')
+txt = txt.replace('pathex=[],', 'pathex=["pyarmor_dist"],')
+txt = txt.replace('"PySide6.QtCore"', '"' + rname + '", "PySide6.QtCore"')
+open("mailcentpro_protected.spec", "w").write(txt)
+PYEOF
+echo "✅  Code source protégé."
 
 # ── Spec Mac (crée un .app bundle) ────────────────────────────────
-# On génère un spec temporaire adapté macOS par-dessus le spec commun
+# On génère un spec temporaire adapté macOS par-dessus le spec protégé
 python3 - <<'PYEOF'
-content = open("mailcentpro.spec").read()
+content = open("mailcentpro_protected.spec").read()
 
 # Remplacer COLLECT par BUNDLE pour créer un .app macOS
 collect_block = """
@@ -121,4 +138,4 @@ echo "╚═══════════════════════�
 echo ""
 
 # Nettoyage
-rm -rf build dist
+rm -rf build dist pyarmor_dist mailcentpro_protected.spec
